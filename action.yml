@@ -1,18 +1,50 @@
-name: 'The name of your action here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Create Black Duck report'
+description: 'Create Black Duck report'
+author: 'Tiago Santos'
 
-# Define your inputs here.
+branding:
+  icon: settings
+  color: blue
+
 inputs:
-  milliseconds:
-    description: 'Your input description here'
+  blackduck-url:
+    description: 'Black Duck instance URL'
     required: true
-    default: '1000'
+  blackduck-token:
+    description: 'Black Duck API token'
+    required: true
+  output-directory:
+    description: 'Path to the directory where the report will be saved'
+    default: './blackduck-report'
+    required: false
+  project-name:
+    description: 'Project name in Black Duck'
+    required: true
+  project-version:
+    description: 'Project version in Black Duck'
+    required: true
+  report-format:
+    description: |-
+      Report format depending on report-type. The following values are supported:
+      - SPDX_22 report: JSON, YAML, RDF or TAG_VALUE.
+      - SPDX_23 report: JSON, YAML, RDF or TAG_VALUE.
+      - CYCLONE_DX_13 report: JSON.
+      - CYCLONE_DX_14 report: JSON.
+    default: 'JSON'
+    required: false
+  report-type:
+    description: |-
+      Report type. The following values are supported:
+      - SPDX_22. Generate a SBOM SPDX v2.2 report.
+      - SPDX_23. Generate a SBOM SPDX v2.3 report.
+      - CYCLONE_DX_13. Generate a SBOM CycloneDX v1.3 report.
+      - CYCLONE_DX_14. Generate a SBOM CycloneDX v1.4 report.
+    default: 'SPDX_23'
+    required: false
 
-# Define your outputs here.
 outputs:
-  time:
-    description: 'Your output description here'
+  report-file-path:
+    description: 'Path to the generated report file'
 
 runs:
   using: node20
