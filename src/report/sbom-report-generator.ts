@@ -5,6 +5,7 @@ import { BlackDuckClient } from '../blackduck/black-duck-client'
 import { ReportGenerator } from './report-generator'
 import { SbomReportProperties } from './sbom-report-properties'
 import { ProjectVersion, Report } from '../model/blackduck'
+import { getReportDownloadLink } from './utils'
 
 // noinspection SpellCheckingInspection
 export class SbomReportGenerator
@@ -14,10 +15,12 @@ export class SbomReportGenerator
   private static MAX_RETRIES = 10 // Maximum number of retries
   private static INITIAL_DELAY_MS = 1000 // Initial delay in milliseconds
   private static MAX_CUMULATIVE_DELAY_MS = 300000 // Maximum cumulative delay (5 minutes)
+  private static REPORT_FILE_NAME_PATTERN = /filename="([^"]+)"/
+  private static DEFAULT_FILE_NAME = 'downloaded_file.zip'
 
   constructor(private readonly blackDuckClient: BlackDuckClient) {}
 
-  async generate(
+  private async createReport(
     version: ProjectVersion,
     reportProperties: SbomReportProperties
   ): Promise<string> {
@@ -46,6 +49,10 @@ export class SbomReportGenerator
       `Report creation request successful. Location: ${locationHeader}`
     )
 
+    return locationHeader
+  }
+
+  private async getCreatedReportData(locationHeader: string): Promise<Report> {
     const report = await retrySuccessWithExponentialBackoff<Report>(
       async () => this.getReportStatus(locationHeader),
       SbomReportGenerator.INITIAL_DELAY_MS,
@@ -53,20 +60,22 @@ export class SbomReportGenerator
       SbomReportGenerator.MAX_RETRIES,
       result => result?.status === 'IN_PROGRESS'
     )
-
     if (!report || report.status !== 'COMPLETED') {
       throw Error('Unable to get a COMPLETED report.')
     }
 
     core.debug('Found report with status COMPLETED.')
 
-    const downloadLink = report._meta.links.find(
-      link => link.rel === 'download'
-    )?.href
+    return report
+  }
 
-    if (!downloadLink) {
-      throw Error('Unable to find download link.')
-    }
+  async generate(
+    version: ProjectVersion,
+    reportProperties: SbomReportProperties
+  ): Promise<string> {
+    const locationHeader = await this.createReport(version, reportProperties)
+    const report = await this.getCreatedReportData(locationHeader)
+    const downloadLink = getReportDownloadLink(report)
 
     core.debug(`Report download link: ${downloadLink}`)
 
@@ -77,8 +86,9 @@ export class SbomReportGenerator
   }
 
   private async getReportStatus(reportUrl: string): Promise<Report> {
-    const response = await this.blackDuckClient.client.get<Report>(reportUrl)
-    return response.data
+    const { data: result } =
+      await this.blackDuckClient.client.get<Report>(reportUrl)
+    return result
   }
 
   private async downloadAndSaveFile(
@@ -88,13 +98,14 @@ export class SbomReportGenerator
     const response = await this.blackDuckClient.client.get(url, {
       responseType: 'blob'
     })
-    let fileName = 'downloaded_file.zip'
+    let fileName = SbomReportGenerator.DEFAULT_FILE_NAME
 
     // Get the content disposition header
     const contentDisposition = response.headers['content-disposition'] || ''
 
     // Extract the filename from the content disposition header
-    const matches = /filename="([^"]+)"/.exec(contentDisposition)
+    const matches =
+      SbomReportGenerator.REPORT_FILE_NAME_PATTERN.exec(contentDisposition)
 
     if (matches && matches.length > 1) {
       // Use the extracted filename if available

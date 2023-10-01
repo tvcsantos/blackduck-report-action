@@ -6862,6 +6862,7 @@ exports.SbomReportGenerator = void 0;
 const promises_1 = __importDefault(__nccwpck_require__(3292));
 const core = __importStar(__nccwpck_require__(2186));
 const utils_1 = __nccwpck_require__(239);
+const utils_2 = __nccwpck_require__(7471);
 // noinspection SpellCheckingInspection
 class SbomReportGenerator {
     blackDuckClient;
@@ -6869,10 +6870,12 @@ class SbomReportGenerator {
     static MAX_RETRIES = 10; // Maximum number of retries
     static INITIAL_DELAY_MS = 1000; // Initial delay in milliseconds
     static MAX_CUMULATIVE_DELAY_MS = 300000; // Maximum cumulative delay (5 minutes)
+    static REPORT_FILE_NAME_PATTERN = /filename="([^"]+)"/;
+    static DEFAULT_FILE_NAME = 'downloaded_file.zip';
     constructor(blackDuckClient) {
         this.blackDuckClient = blackDuckClient;
     }
-    async generate(version, reportProperties) {
+    async createReport(version, reportProperties) {
         const url = await this.blackDuckClient.getResourceUrlByPath('/sbom-reports', version);
         const payload = {
             reportFormat: reportProperties.format,
@@ -6885,31 +6888,36 @@ class SbomReportGenerator {
             throw Error('Request to create report failed. Location header is missing.');
         }
         core.debug(`Report creation request successful. Location: ${locationHeader}`);
+        return locationHeader;
+    }
+    async getCreatedReportData(locationHeader) {
         const report = await (0, utils_1.retrySuccessWithExponentialBackoff)(async () => this.getReportStatus(locationHeader), SbomReportGenerator.INITIAL_DELAY_MS, SbomReportGenerator.MAX_CUMULATIVE_DELAY_MS, SbomReportGenerator.MAX_RETRIES, result => result?.status === 'IN_PROGRESS');
         if (!report || report.status !== 'COMPLETED') {
             throw Error('Unable to get a COMPLETED report.');
         }
         core.debug('Found report with status COMPLETED.');
-        const downloadLink = report._meta.links.find(link => link.rel === 'download')?.href;
-        if (!downloadLink) {
-            throw Error('Unable to find download link.');
-        }
+        return report;
+    }
+    async generate(version, reportProperties) {
+        const locationHeader = await this.createReport(version, reportProperties);
+        const report = await this.getCreatedReportData(locationHeader);
+        const downloadLink = (0, utils_2.getReportDownloadLink)(report);
         core.debug(`Report download link: ${downloadLink}`);
         return this.downloadAndSaveFile(downloadLink, reportProperties.outputDirectory);
     }
     async getReportStatus(reportUrl) {
-        const response = await this.blackDuckClient.client.get(reportUrl);
-        return response.data;
+        const { data: result } = await this.blackDuckClient.client.get(reportUrl);
+        return result;
     }
     async downloadAndSaveFile(url, outputDirectory) {
         const response = await this.blackDuckClient.client.get(url, {
             responseType: 'blob'
         });
-        let fileName = 'downloaded_file.zip';
+        let fileName = SbomReportGenerator.DEFAULT_FILE_NAME;
         // Get the content disposition header
         const contentDisposition = response.headers['content-disposition'] || '';
         // Extract the filename from the content disposition header
-        const matches = /filename="([^"]+)"/.exec(contentDisposition);
+        const matches = SbomReportGenerator.REPORT_FILE_NAME_PATTERN.exec(contentDisposition);
         if (matches && matches.length > 1) {
             // Use the extracted filename if available
             fileName = matches[1];
@@ -6919,6 +6927,29 @@ class SbomReportGenerator {
     }
 }
 exports.SbomReportGenerator = SbomReportGenerator;
+
+
+/***/ }),
+
+/***/ 7471:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getReportDownloadLink = exports.getReportDownloadLinkOrUndefined = void 0;
+function getReportDownloadLinkOrUndefined(report) {
+    return report._meta.links.find(link => link.rel === 'download')?.href;
+}
+exports.getReportDownloadLinkOrUndefined = getReportDownloadLinkOrUndefined;
+function getReportDownloadLink(report) {
+    const downloadLink = getReportDownloadLinkOrUndefined(report);
+    if (!downloadLink) {
+        throw Error('Unable to find report download link.');
+    }
+    return downloadLink;
+}
+exports.getReportDownloadLink = getReportDownloadLink;
 
 
 /***/ }),
