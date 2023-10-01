@@ -3,7 +3,7 @@ import { Report } from '../model/blackduck'
 export function getReportDownloadLinkOrUndefined(
   report: Report
 ): string | undefined {
-  return report._meta.links.find(link => link.rel === 'download')?.href
+  return report._meta.links?.find(link => link.rel === 'download')?.href
 }
 
 export function getReportDownloadLink(report: Report): string {

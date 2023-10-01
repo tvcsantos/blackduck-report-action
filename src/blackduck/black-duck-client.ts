@@ -97,8 +97,10 @@ export class BlackDuckClient {
       if (!(key in parent)) {
         const parentMeta = parent['_meta'] as Meta
         const resourcesDict: Resource = {}
-        for (const res of parentMeta.links) {
-          resourcesDict[res['rel']] = res['href']
+        const links = parentMeta.links ?? []
+        for (const res of links) {
+          const rel = res['rel']
+          if (rel) resourcesDict[rel] = res['href']
         }
         // save url to parent itself if available, otherwise save 'href': None
         resourcesDict['href'] = parentMeta.href

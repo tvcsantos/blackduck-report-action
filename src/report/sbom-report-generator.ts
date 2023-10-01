@@ -76,12 +76,12 @@ export class SbomReportGenerator
     const locationHeader = await this.createReport(version, reportProperties)
     const report = await this.getCreatedReportData(locationHeader)
     const downloadLink = getReportDownloadLink(report)
-
     core.debug(`Report download link: ${downloadLink}`)
 
     return this.downloadAndSaveFile(
       downloadLink,
-      reportProperties.outputDirectory
+      reportProperties.outputDirectory,
+      report.fileName
     )
   }
 
@@ -93,27 +93,32 @@ export class SbomReportGenerator
 
   private async downloadAndSaveFile(
     url: string,
-    outputDirectory: string
+    outputDirectory: string,
+    fileName?: string
   ): Promise<string> {
     const response = await this.blackDuckClient.client.get(url, {
       responseType: 'blob'
     })
-    let fileName = SbomReportGenerator.DEFAULT_FILE_NAME
+    let savedFileName = fileName
+    if (!savedFileName) {
+      savedFileName = SbomReportGenerator.DEFAULT_FILE_NAME
 
-    // Get the content disposition header
-    const contentDisposition = response.headers['content-disposition'] || ''
+      // Get the content disposition header
+      const contentDisposition = response.headers['content-disposition'] || ''
 
-    // Extract the filename from the content disposition header
-    const matches =
-      SbomReportGenerator.REPORT_FILE_NAME_PATTERN.exec(contentDisposition)
+      // Extract the filename from the content disposition header
+      const matches =
+        SbomReportGenerator.REPORT_FILE_NAME_PATTERN.exec(contentDisposition)
 
-    if (matches && matches.length > 1) {
-      // Use the extracted filename if available
-      fileName = matches[1]
+      if (matches && matches.length > 1) {
+        // Use the extracted filename if available
+        savedFileName = matches[1]
+      }
     }
 
-    await fs.writeFile(`${outputDirectory}/${fileName}`, response.data)
+    const reportFilePath = `${outputDirectory}/${savedFileName}`
+    await fs.writeFile(reportFilePath, response.data)
 
-    return `${outputDirectory}/${fileName}`
+    return reportFilePath
   }
 }

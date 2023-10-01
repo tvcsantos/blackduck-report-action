@@ -6339,8 +6339,11 @@ class BlackDuckClient {
             if (!(key in parent)) {
                 const parentMeta = parent['_meta'];
                 const resourcesDict = {};
-                for (const res of parentMeta.links) {
-                    resourcesDict[res['rel']] = res['href'];
+                const links = parentMeta.links ?? [];
+                for (const res of links) {
+                    const rel = res['rel'];
+                    if (rel)
+                        resourcesDict[rel] = res['href'];
                 }
                 // save url to parent itself if available, otherwise save 'href': None
                 resourcesDict['href'] = parentMeta.href;
@@ -6903,27 +6906,31 @@ class SbomReportGenerator {
         const report = await this.getCreatedReportData(locationHeader);
         const downloadLink = (0, utils_2.getReportDownloadLink)(report);
         core.debug(`Report download link: ${downloadLink}`);
-        return this.downloadAndSaveFile(downloadLink, reportProperties.outputDirectory);
+        return this.downloadAndSaveFile(downloadLink, reportProperties.outputDirectory, report.fileName);
     }
     async getReportStatus(reportUrl) {
         const { data: result } = await this.blackDuckClient.client.get(reportUrl);
         return result;
     }
-    async downloadAndSaveFile(url, outputDirectory) {
+    async downloadAndSaveFile(url, outputDirectory, fileName) {
         const response = await this.blackDuckClient.client.get(url, {
             responseType: 'blob'
         });
-        let fileName = SbomReportGenerator.DEFAULT_FILE_NAME;
-        // Get the content disposition header
-        const contentDisposition = response.headers['content-disposition'] || '';
-        // Extract the filename from the content disposition header
-        const matches = SbomReportGenerator.REPORT_FILE_NAME_PATTERN.exec(contentDisposition);
-        if (matches && matches.length > 1) {
-            // Use the extracted filename if available
-            fileName = matches[1];
+        let savedFileName = fileName;
+        if (!savedFileName) {
+            savedFileName = SbomReportGenerator.DEFAULT_FILE_NAME;
+            // Get the content disposition header
+            const contentDisposition = response.headers['content-disposition'] || '';
+            // Extract the filename from the content disposition header
+            const matches = SbomReportGenerator.REPORT_FILE_NAME_PATTERN.exec(contentDisposition);
+            if (matches && matches.length > 1) {
+                // Use the extracted filename if available
+                savedFileName = matches[1];
+            }
         }
-        await promises_1.default.writeFile(`${outputDirectory}/${fileName}`, response.data);
-        return `${outputDirectory}/${fileName}`;
+        const reportFilePath = `${outputDirectory}/${savedFileName}`;
+        await promises_1.default.writeFile(reportFilePath, response.data);
+        return reportFilePath;
     }
 }
 exports.SbomReportGenerator = SbomReportGenerator;
@@ -6939,7 +6946,7 @@ exports.SbomReportGenerator = SbomReportGenerator;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getReportDownloadLink = exports.getReportDownloadLinkOrUndefined = void 0;
 function getReportDownloadLinkOrUndefined(report) {
-    return report._meta.links.find(link => link.rel === 'download')?.href;
+    return report._meta.links?.find(link => link.rel === 'download')?.href;
 }
 exports.getReportDownloadLinkOrUndefined = getReportDownloadLinkOrUndefined;
 function getReportDownloadLink(report) {
