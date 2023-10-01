@@ -6262,7 +6262,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.BlackDuckClient = void 0;
-/* eslint-disable @typescript-eslint/no-explicit-any */
 const core = __importStar(__nccwpck_require__(2186));
 const axios_1 = __importDefault(__nccwpck_require__(8757));
 // ℹ️ This code is adapted from hub-rest-api-python project
@@ -6324,13 +6323,6 @@ class BlackDuckClient {
         const { data: response } = await axios_1.default.post(`${this.basePath}/api/tokens/authenticate`, {}, config);
         return Promise.resolve(response);
     }
-    safeGet(obj, ...keys) {
-        let head = obj;
-        for (const key of keys) {
-            head = head[key];
-        }
-        return head;
-    }
     // noinspection GrazieInspection
     /**
      * List named resources that can be fetched.
@@ -6342,18 +6334,16 @@ class BlackDuckClient {
      * Defaults to None (for root /api/ base).
      */
     async listResources(parent) {
-        /*if parent is not None and not isinstance(parent, dict):
-                    raise TypeError("parent parameter must be a dict if not None")*/
         if (parent) {
             const key = '_hub_rest_api_python_resources_dict';
             if (!(key in parent)) {
-                const relHrefPairs = this.safeGet(parent, '_meta', 'links');
+                const parentMeta = parent['_meta'];
                 const resourcesDict = {};
-                for (const res of relHrefPairs) {
+                for (const res of parentMeta.links) {
                     resourcesDict[res['rel']] = res['href'];
                 }
                 // save url to parent itself if available, otherwise save 'href': None
-                resourcesDict['href'] = this.safeGet(parent, '_meta', 'href');
+                resourcesDict['href'] = parentMeta.href;
                 parent[key] = resourcesDict; // cache for future use
             }
             return Promise.resolve(parent[key]);
@@ -6363,11 +6353,11 @@ class BlackDuckClient {
             // compared to (rel, href) pairs in _meta.links
             if (!this.rootResourcesDict) {
                 // cache root resources for efficiency
-                const resp = await this.clientInstance.get(`${this.basePath}/api/`);
-                const resourcesDict = resp.data;
-                resourcesDict['href'] = resp.config.url; // save url to root itself
-                delete resourcesDict['_meta'];
-                this.rootResourcesDict = resourcesDict;
+                const response = await this.clientInstance.get(`${this.basePath}/api/`);
+                const data = response.data;
+                data['href'] = response.config.url; // save url to root itself
+                delete data['_meta'];
+                this.rootResourcesDict = data;
             }
             return Promise.resolve(this.rootResourcesDict);
         }
@@ -6378,7 +6368,7 @@ class BlackDuckClient {
             const message = `resource name '${name}' not found in available resources`;
             core.error(message);
             core.error(JSON.stringify(resourcesDict));
-            throw new Error(message);
+            throw Error(message);
         }
         return Promise.resolve(resourcesDict[name]);
     }
@@ -6421,7 +6411,7 @@ class BlackDuckClient {
     async getMetadata(name, parent, properties) {
         // limit: 0 works for 'projects' but not for 'codeLocations' or project 'versions'
         const newProperties = properties ?? {};
-        newProperties.searchParams = { limit: 1 };
+        newProperties.params = { limit: 1 };
         return this.getResource(name, parent, newProperties);
     }
     // noinspection GrazieInspection
@@ -6440,6 +6430,7 @@ class BlackDuckClient {
     async getJson(url, properties) {
         const headers = properties.headers ?? {};
         headers['Accept'] = 'application/json'; // request json response
+        properties.responseType = 'json';
         properties.headers = headers;
         const response = await this.clientInstance.get(url, properties);
         if ('content-type' in response.headers) {
@@ -6455,11 +6446,11 @@ class BlackDuckClient {
     async *internalGetItems(url, pageSize, properties) {
         let offset = 0;
         const myProperties = properties ?? {};
-        const searchParams = myProperties.searchParams ?? {};
+        const searchParams = myProperties.params ?? {};
         while (true) {
             searchParams.offset = offset;
             searchParams.limit = pageSize;
-            myProperties.searchParams = searchParams;
+            myProperties.params = searchParams;
             const json = await this.getJson(url, myProperties);
             const items = json.items;
             for (const item of items) {
@@ -6511,8 +6502,8 @@ class BlackDuckEnhancedClient {
         this.reportGeneratorFactory = reportGeneratorFactory;
     }
     async getProjectsByName(projectName) {
-        return this.blackDuckClient.getItemsByName(BlackDuckEnhancedClient.PROJECTS_RESOURCE, null, BlackDuckEnhancedClient.ITEMS_DEFAULT_PAGE_SIZE, {
-            searchParams: {
+        return this.blackDuckClient.getItemsByName(BlackDuckEnhancedClient.PROJECTS_RESOURCE, undefined, BlackDuckEnhancedClient.ITEMS_DEFAULT_PAGE_SIZE, {
+            params: {
                 q: `${BlackDuckEnhancedClient.NAME_SEARCH}:${projectName}`
             }
         });
@@ -6526,11 +6517,11 @@ class BlackDuckEnhancedClient {
     }
     async getProjectVersion(project, versionName) {
         const versions = await this.blackDuckClient.getItemsByName(BlackDuckEnhancedClient.VERSIONS_RESOURCE, project, BlackDuckEnhancedClient.ITEMS_DEFAULT_PAGE_SIZE, {
-            searchParams: {
+            params: {
                 q: `${BlackDuckEnhancedClient.VERSION_NAME_SEARCH}:${versionName}`
             }
         });
-        return (0, utils_1.asyncIteratorFirstOrUndefined)(versions, x => x.name === versionName);
+        return (0, utils_1.asyncIteratorFirstOrUndefined)(versions, x => x.versionName === versionName);
     }
     async deleteResource(resource) {
         await this.blackDuckClient.client.delete(resource._meta.href);
@@ -6538,7 +6529,13 @@ class BlackDuckEnhancedClient {
     }
     async generateReport(projectProperties, reportProperties) {
         const project = await this.getProjectByName(projectProperties.name);
+        if (!project) {
+            throw Error(`Project '${projectProperties.name}' not found`);
+        }
         const version = await this.getProjectVersion(project, projectProperties.version);
+        if (!version) {
+            throw Error(`Version '${projectProperties.version}' not found in project '${projectProperties.name}'`);
+        }
         const reportGenerator = this.reportGeneratorFactory.getReportGenerator(this.blackDuckClient, reportProperties.type);
         return reportGenerator.generate(version, reportProperties);
     }
@@ -6865,6 +6862,7 @@ exports.SbomReportGenerator = void 0;
 const promises_1 = __importDefault(__nccwpck_require__(3292));
 const core = __importStar(__nccwpck_require__(2186));
 const utils_1 = __nccwpck_require__(239);
+// noinspection SpellCheckingInspection
 class SbomReportGenerator {
     blackDuckClient;
     // Define constants for retry settings
@@ -6874,9 +6872,7 @@ class SbomReportGenerator {
     constructor(blackDuckClient) {
         this.blackDuckClient = blackDuckClient;
     }
-    async generate(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    version, reportProperties) {
+    async generate(version, reportProperties) {
         const url = await this.blackDuckClient.getResourceUrlByPath('/sbom-reports', version);
         const payload = {
             reportFormat: reportProperties.format,
@@ -6889,17 +6885,18 @@ class SbomReportGenerator {
             throw Error('Request to create report failed. Location header is missing.');
         }
         core.debug(`Report creation request successful. Location: ${locationHeader}`);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const report = await (0, utils_1.retrySuccessWithExponentialBackoff)(async () => this.getReportStatus(locationHeader), SbomReportGenerator.INITIAL_DELAY_MS, SbomReportGenerator.MAX_CUMULATIVE_DELAY_MS, SbomReportGenerator.MAX_RETRIES, (result) => result?.status === 'IN_PROGRESS');
+        const report = await (0, utils_1.retrySuccessWithExponentialBackoff)(async () => this.getReportStatus(locationHeader), SbomReportGenerator.INITIAL_DELAY_MS, SbomReportGenerator.MAX_CUMULATIVE_DELAY_MS, SbomReportGenerator.MAX_RETRIES, result => result?.status === 'IN_PROGRESS');
         if (!report || report.status !== 'COMPLETED') {
             throw Error('Unable to get a COMPLETED report.');
         }
         core.debug('Found report with status COMPLETED.');
-        const downloadLink = report._meta.links.find((link) => link.rel === 'download')?.href;
+        const downloadLink = report._meta.links.find(link => link.rel === 'download')?.href;
+        if (!downloadLink) {
+            throw Error('Unable to find download link.');
+        }
         core.debug(`Report download link: ${downloadLink}`);
         return this.downloadAndSaveFile(downloadLink, reportProperties.outputDirectory);
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async getReportStatus(reportUrl) {
         const response = await this.blackDuckClient.client.get(reportUrl);
         return response.data;

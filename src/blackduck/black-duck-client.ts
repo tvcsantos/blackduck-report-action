@@ -1,7 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as core from '@actions/core'
-import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios'
+import axios, {
+  AxiosInstance,
+  AxiosRequestConfig,
+  InternalAxiosRequestConfig
+} from 'axios'
 import { AuthenticationToken } from '../model/authentication-token'
+import { Meta, Page, Resource } from '../model/blackduck'
 
 // ℹ️ This code is adapted from hub-rest-api-python project
 // and ported to TypeScript.
@@ -12,7 +16,7 @@ export class BlackDuckClient {
   private cachedAuthenticationExpireTime: number | null = null
   private cachedAuthentication: AuthenticationToken | null = null
   private readonly clientInstance: AxiosInstance
-  private rootResourcesDict: any = null
+  private rootResourcesDict: Resource | null = null
 
   private async authenticationHook(
     config: InternalAxiosRequestConfig
@@ -77,14 +81,6 @@ export class BlackDuckClient {
     return Promise.resolve(response)
   }
 
-  private safeGet(obj: any, ...keys: string[]): any {
-    let head = obj
-    for (const key of keys) {
-      head = head[key]
-    }
-    return head
-  }
-
   // noinspection GrazieInspection
   /**
    * List named resources that can be fetched.
@@ -95,64 +91,63 @@ export class BlackDuckClient {
    * @param parent (dict/json): resource object from prior get_resource invocations.
    * Defaults to None (for root /api/ base).
    */
-  async listResources(parent?: any): Promise<any> {
-    /*if parent is not None and not isinstance(parent, dict):
-                raise TypeError("parent parameter must be a dict if not None")*/
-
+  async listResources<T>(parent?: Resource): Promise<T> {
     if (parent) {
       const key = '_hub_rest_api_python_resources_dict'
       if (!(key in parent)) {
-        const relHrefPairs = this.safeGet(parent, '_meta', 'links')
-        const resourcesDict: any = {}
-        for (const res of relHrefPairs) {
+        const parentMeta = parent['_meta'] as Meta
+        const resourcesDict: Resource = {}
+        for (const res of parentMeta.links) {
           resourcesDict[res['rel']] = res['href']
         }
         // save url to parent itself if available, otherwise save 'href': None
-        resourcesDict['href'] = this.safeGet(parent, '_meta', 'href')
+        resourcesDict['href'] = parentMeta.href
         parent[key] = resourcesDict // cache for future use
       }
-      return Promise.resolve(parent[key])
+      return Promise.resolve(parent[key] as T)
     } else {
       // the root resources are in a different format (name -> href)
       // compared to (rel, href) pairs in _meta.links
       if (!this.rootResourcesDict) {
         // cache root resources for efficiency
-        const resp = await this.clientInstance.get(`${this.basePath}/api/`)
-        const resourcesDict: any = resp.data
-        resourcesDict['href'] = resp.config.url // save url to root itself
-        delete resourcesDict['_meta']
-        this.rootResourcesDict = resourcesDict
+        const response = await this.clientInstance.get<Resource>(
+          `${this.basePath}/api/`
+        )
+        const data = response.data
+        data['href'] = response.config.url // save url to root itself
+        delete data['_meta']
+        this.rootResourcesDict = data
       }
-      return Promise.resolve(this.rootResourcesDict)
+      return Promise.resolve(this.rootResourcesDict as T)
     }
   }
 
-  async getResourceUrlByName(name: string, parent?: any): Promise<string> {
-    const resourcesDict = await this.listResources(parent)
+  async getResourceUrlByName(name: string, parent?: Resource): Promise<string> {
+    const resourcesDict: Resource = await this.listResources(parent)
     if (!(name in resourcesDict)) {
       const message = `resource name '${name}' not found in available resources`
       core.error(message)
       core.error(JSON.stringify(resourcesDict))
-      throw new Error(message)
+      throw Error(message)
     }
-    return Promise.resolve(resourcesDict[name])
+    return Promise.resolve(resourcesDict[name] as string)
   }
 
-  async getItemsByName(
+  async getItemsByName<T>(
     name: string,
-    parent?: any,
+    parent?: Resource,
     pageSize = 50,
-    properties?: any
-  ): Promise<AsyncIterableIterator<any>> {
+    properties?: AxiosRequestConfig
+  ): Promise<AsyncIterableIterator<T>> {
     const url = await this.getResourceUrlByName(name, parent)
     return Promise.resolve(this.getItemsByUrl(url, pageSize, properties))
   }
 
-  getItemsByUrl(
+  getItemsByUrl<T>(
     url: string,
     pageSize = 50,
-    properties?: any
-  ): AsyncIterableIterator<any> {
+    properties?: AxiosRequestConfig
+  ): AsyncIterableIterator<T> {
     return this.internalGetItems(url, pageSize, properties)
   }
 
@@ -167,11 +162,11 @@ export class BlackDuckClient {
    *                                 Use None for root /api/ base.
    * @param properties passed to session.request
    */
-  async getResource(
+  async getResource<T>(
     name: string,
-    parent?: any,
-    properties?: any
-  ): Promise<any> {
+    parent?: Resource,
+    properties?: AxiosRequestConfig
+  ): Promise<T> {
     if (name.length <= 0) {
       throw new Error('name parameter must be non-empty')
     }
@@ -193,12 +188,12 @@ export class BlackDuckClient {
    */
   async getMetadata(
     name: string,
-    parent?: any,
-    properties?: any
-  ): Promise<any> {
+    parent?: Resource,
+    properties?: AxiosRequestConfig
+  ): Promise<unknown> {
     // limit: 0 works for 'projects' but not for 'codeLocations' or project 'versions'
     const newProperties = properties ?? {}
-    newProperties.searchParams = { limit: 1 }
+    newProperties.params = { limit: 1 }
     return this.getResource(name, parent, newProperties)
   }
 
@@ -215,11 +210,15 @@ export class BlackDuckClient {
    * @param url (str): of endpoint
    * @param properties passed to session.request
    */
-  private async getJson(url: string, properties: any): Promise<any> {
+  private async getJson<T>(
+    url: string,
+    properties: AxiosRequestConfig
+  ): Promise<T> {
     const headers = properties.headers ?? {}
     headers['Accept'] = 'application/json' // request json response
+    properties.responseType = 'json'
     properties.headers = headers
-    const response = await this.clientInstance.get(url, properties)
+    const response = await this.clientInstance.get<T>(url, properties)
     if ('content-type' in response.headers) {
       const contentType = response.headers['content-type'] ?? ''
       const values = contentType.split(',').map((x: string) => x.trim())
@@ -235,20 +234,21 @@ export class BlackDuckClient {
     return Promise.resolve(response.data)
   }
 
-  private async *internalGetItems(
+  private async *internalGetItems<T>(
     url: string,
     pageSize: number,
-    properties?: any
-  ): AsyncIterableIterator<any> {
+    properties?: AxiosRequestConfig
+  ): AsyncIterableIterator<T> {
     let offset = 0
     const myProperties = properties ?? {}
-    const searchParams: any = myProperties.searchParams ?? {}
+    const searchParams: { offset?: number; limit?: number } =
+      myProperties.params ?? {}
 
     while (true) {
       searchParams.offset = offset
       searchParams.limit = pageSize
-      myProperties.searchParams = searchParams
-      const json = await this.getJson(url, myProperties)
+      myProperties.params = searchParams
+      const json = await this.getJson<Page<T>>(url, myProperties)
       const items = json.items
 
       for (const item of items) {
@@ -263,7 +263,7 @@ export class BlackDuckClient {
     }
   }
 
-  async getResourceUrlByPath(path: string, parent?: any): Promise<string> {
+  async getResourceUrlByPath(path: string, parent?: Resource): Promise<string> {
     if (!path.startsWith('/')) {
       path = `/${path}`
     }

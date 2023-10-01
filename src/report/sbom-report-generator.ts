@@ -4,7 +4,9 @@ import { retrySuccessWithExponentialBackoff } from '../utils/utils'
 import { BlackDuckClient } from '../blackduck/black-duck-client'
 import { ReportGenerator } from './report-generator'
 import { SbomReportProperties } from './sbom-report-properties'
+import { ProjectVersion, Report } from '../model/blackduck'
 
+// noinspection SpellCheckingInspection
 export class SbomReportGenerator
   implements ReportGenerator<SbomReportProperties>
 {
@@ -16,8 +18,7 @@ export class SbomReportGenerator
   constructor(private readonly blackDuckClient: BlackDuckClient) {}
 
   async generate(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    version: any,
+    version: ProjectVersion,
     reportProperties: SbomReportProperties
   ): Promise<string> {
     const url = await this.blackDuckClient.getResourceUrlByPath(
@@ -45,13 +46,12 @@ export class SbomReportGenerator
       `Report creation request successful. Location: ${locationHeader}`
     )
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const report: any = await retrySuccessWithExponentialBackoff<any>(
+    const report = await retrySuccessWithExponentialBackoff<Report>(
       async () => this.getReportStatus(locationHeader),
       SbomReportGenerator.INITIAL_DELAY_MS,
       SbomReportGenerator.MAX_CUMULATIVE_DELAY_MS,
       SbomReportGenerator.MAX_RETRIES,
-      (result: { status: string } | null) => result?.status === 'IN_PROGRESS'
+      result => result?.status === 'IN_PROGRESS'
     )
 
     if (!report || report.status !== 'COMPLETED') {
@@ -61,8 +61,12 @@ export class SbomReportGenerator
     core.debug('Found report with status COMPLETED.')
 
     const downloadLink = report._meta.links.find(
-      (link: { rel: string }) => link.rel === 'download'
+      link => link.rel === 'download'
     )?.href
+
+    if (!downloadLink) {
+      throw Error('Unable to find download link.')
+    }
 
     core.debug(`Report download link: ${downloadLink}`)
 
@@ -72,9 +76,8 @@ export class SbomReportGenerator
     )
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private async getReportStatus(reportUrl: string): Promise<any> {
-    const response = await this.blackDuckClient.client.get(reportUrl)
+  private async getReportStatus(reportUrl: string): Promise<Report> {
+    const response = await this.blackDuckClient.client.get<Report>(reportUrl)
     return response.data
   }
 

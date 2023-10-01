@@ -1,6 +1,6 @@
 import { ReportProperties } from './report-properties'
+import { ProjectVersion } from '../model/blackduck'
 
 export interface ReportGenerator<T extends ReportProperties> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  generate(projectVersion: any, reportProperties: T): Promise<string>
+  generate(projectVersion: ProjectVersion, reportProperties: T): Promise<string>
 }
