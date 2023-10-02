@@ -1,4 +1,4 @@
-import fs from 'fs/promises'
+import fse from 'fs-extra'
 import * as core from '@actions/core'
 import { retrySuccessWithExponentialBackoff } from '../utils/utils'
 import { BlackDuckClient } from '../blackduck/black-duck-client'
@@ -117,7 +117,7 @@ export class SbomReportGenerator
     }
 
     const reportFilePath = `${outputDirectory}/${savedFileName}`
-    await fs.writeFile(reportFilePath, response.data)
+    await fse.outputFile(reportFilePath, response.data)
 
     return reportFilePath
   }
