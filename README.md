@@ -1,199 +1,83 @@
-# Create a JavaScript Action Using TypeScript
+# Create Black Duck Report Action
 
-[![GitHub Super-Linter](https://github.com/actions/typescript-action/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
-![CI](https://github.com/actions/typescript-action/actions/workflows/ci.yml/badge.svg)
+## Overview
 
-Use this template to bootstrap the creation of a TypeScript action. :rocket:
+This action provides support for creating Black Duck reports. Currently, it supports the following types:
 
-This template includes compilation support, tests, a validation workflow,
-publishing, and versioning guidance.
+- Software Bill of Materials (SBOM)
 
-If you are new, there's also a simpler introduction in the
-[Hello world JavaScript action repository](https://github.com/actions/hello-world-javascript-action).
+Software Bill of Materials (SBOM) reports can be generated in the following formats:
+- SPDX v2.2
+- SPDX v2.3
+- CycloneDX v1.3
+- CycloneDX v1.4
 
-## Create Your Own Action
+## Changelog
 
-To create your own action, you can use this repository as a template! Just
-follow the below instructions:
-
-1. Click the **Use this template** button at the top of the repository
-1. Select **Create a new repository**
-1. Select an owner and name for your new repository
-1. Click **Create repository**
-1. Clone your new repository
-
-## Initial Setup
-
-After you've cloned the repository to your local machine or codespace, you'll
-need to perform some initial setup steps before you can develop your action.
-
-> [!NOTE]
->
-> You'll need to have a reasonably modern version of
-> [Node.js](https://nodejs.org) handy. If you are using a version manager like
-> [`nodenv`](https://github.com/nodenv/nodenv) or
-> [`nvm`](https://github.com/nvm-sh/nvm), you can run `nodenv install` in the
-> root of your repository to install the version specified in
-> [`package.json`](./package.json). Otherwise, 20.x or later should work!
-
-1. :hammer_and_wrench: Install the dependencies
-
-   ```bash
-   npm install
-   ```
-
-1. :building_construction: Package the TypeScript for distribution
-
-   ```bash
-   npm run bundle
-   ```
-
-1. :white_check_mark: Run the tests
-
-   ```bash
-   $ npm test
-
-   PASS  ./index.test.js
-     ✓ throws invalid number (3ms)
-     ✓ wait 500 ms (504ms)
-     ✓ test runs (95ms)
-
-   ...
-   ```
-
-## Update the Action Metadata
-
-The [`action.yml`](action.yml) file defines metadata about your action, such as
-input(s) and output(s). For details about this file, see
-[Metadata syntax for GitHub Actions](https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions).
-
-When you copy this repository, update `action.yml` with the name, description,
-inputs, and outputs for your action.
-
-## Update the Action Code
-
-The [`src/`](./src/) directory is the heart of your action! This contains the
-source code that will be run when your action is invoked. You can replace the
-contents of this directory with your own code.
-
-There are a few things to keep in mind when writing your action code:
-
-- Most GitHub Actions toolkit and CI/CD operations are processed asynchronously.
-  In `main.ts`, you will see that the action is run in an `async` function.
-
-  ```javascript
-  import * as core from '@actions/core'
-  //...
-
-  async function run() {
-    try {
-      //...
-    } catch (error) {
-      core.setFailed(error.message)
-    }
-  }
-  ```
-
-  For more information about the GitHub Actions toolkit, see the
-  [documentation](https://github.com/actions/toolkit/blob/master/README.md).
-
-So, what are you waiting for? Go ahead and start customizing your action!
-
-1. Create a new branch
-
-   ```bash
-   git checkout -b releases/v1
-   ```
-
-1. Replace the contents of `src/` with your action code
-1. Add tests to `__tests__/` for your source code
-1. Format, test, and build the action
-
-   ```bash
-   npm run all
-   ```
-
-   > [!WARNING]
-   >
-   > This step is important! It will run [`ncc`](https://github.com/vercel/ncc)
-   > to build the final JavaScript action code with all dependencies included.
-   > If you do not run this step, your action will not work correctly when it is
-   > used in a workflow. This step also includes the `--license` option for
-   > `ncc`, which will create a license file for all of the production node
-   > modules used in your project.
-
-1. Commit your changes
-
-   ```bash
-   git add .
-   git commit -m "My first action is ready!"
-   ```
-
-1. Push them to your repository
-
-   ```bash
-   git push -u origin releases/v1
-   ```
-
-1. Create a pull request and get feedback on your action
-1. Merge the pull request into the `main` branch
-
-Your action is now published! :rocket:
-
-For information about versioning your action, see
-[Versioning](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
-in the GitHub Actions toolkit.
-
-## Validate the Action
-
-You can now validate the action by referencing it in a workflow file. For
-example, [`ci.yml`](./.github/workflows/ci.yml) demonstrates how to reference an
-action in the same repository.
-
-```yaml
-steps:
-  - name: Checkout
-    id: checkout
-    uses: actions/checkout@v3
-
-  - name: Test Local Action
-    id: test-action
-    uses: ./
-    with:
-      milliseconds: 1000
-
-  - name: Print Output
-    id: output
-    run: echo "${{ steps.test-action.outputs.time }}"
-```
-
-For example workflow runs, check out the
-[Actions tab](https://github.com/actions/typescript-action/actions)! :rocket:
+All notable changes to this project are documented in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Usage
 
-After testing, you can create version tag(s) that developers can use to
-reference different stable versions of your action. For more information, see
-[Versioning](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
-in the GitHub Actions toolkit.
-
-To include the action in a workflow in another repository, you can use the
-`uses` syntax with the `@` symbol to reference a specific branch, tag, or commit
-hash.
+### Example
 
 ```yaml
-steps:
-  - name: Checkout
-    id: checkout
-    uses: actions/checkout@v3
+on:
+  push:
+    tags:
+      - '*'
 
-  - name: Test Local Action
-    id: test-action
-    uses: actions/typescript-action@v1 # Commit with the `v1` tag
-    with:
-      milliseconds: 1000
-
-  - name: Print Output
-    id: output
-    run: echo "${{ steps.test-action.outputs.time }}"
+jobs:
+  create-report:
+    name: Create Black Duck report 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Black Duck report
+        uses: tvcsantos/blackduck-report-action@v1
+        with:
+          blackduck-url: ${{ vars.BLACKDUCK_URL }}
+          blackduck-token: ${{ secrets.BLACKDUCK_API_TOKEN }}
 ```
+
+In the example above we are using the action to create a Black Duck report for the current repository on push to any
+tag. First we checkout our code, then we run this action.
+
+⚠️ Note that this action requires at least the following parameters to work:
+
+- `blackduck-url` - Black Duck instance URL.
+- `blackduck-token` - Authentication token for a user, to scan your project.
+
+⚠️ Note that `blackduck-token` should be kept as secret and not exposed in plain text in your action. Also, we can
+benefit from variables to avoid having `blackduck-url` in plain text and promote re-usability of the above workflow in
+our pipelines later.
+
+In the example above `blackduck-token` is provided via the secret `BLACKDUCK_API_TOKEN`, that must be defined either in
+your project repository or shared at organization level. With respect to `blackduck-url` it is provided via the variable
+`BLACKDUCK_URL` that must be defined either in your repository variables or shared at organization level.
+
+For more details on the values for these secrets and variables please check [Inputs](#inputs) section.
+
+### Inputs
+
+| Input              | Type   | Required | Default Value              | Description                                                                                                                                                                                                                                                                                          |
+|--------------------|--------|----------|----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `blackduck-url`    | String | Yes      | -                          | Black Duck instance URL.                                                                                                                                                                                                                                                                             |
+| `blackduck-token`  | String | Yes      | -                          | Black Duck API token.                                                                                                                                                                                                                                                                                |
+| `output-directory` | String | No       | `./blackduck-report`       | Path to the directory where the report will be saved.                                                                                                                                                                                                                                                |
+| `project-name`     | String | No       | `${{ github.repository }}` | Project name in Black Duck.                                                                                                                                                                                                                                                                          |
+| `project-version`  | String | No       | `${{ github.ref_name }}`   | Project version in Black Duck.                                                                                                                                                                                                                                                                       |
+| `report-format`    | String | No       | `JSON`                     | Report format depending on report-type. The following values are supported:<ul><li>`SPDX_22` report: `JSON`, `YAML`, `RDF` or `TAG_VALUE`.</li><li>`SPDX_23` report: `JSON`, `YAML`, `RDF` or `TAG_VALUE`.</li><li>`CYCLONE_DX_13` report: `JSON`.</li><li>`CYCLONE_DX_14` report: `JSON`.</li></ul> |
+| `report-type`      | String | No       | `SPDX_23`                  | Report type. The following values are supported:<ul><li>`SPDX_22`. Generate a SBOM SPDX v2.2 report.</li><li>`SPDX_23`. Generate a SBOM SPDX v2.3 report.</li><li>`CYCLONE_DX_13`. Generate a SBOM CycloneDX v1.3 report.</li><li>`CYCLONE_DX_14`. Generate a SBOM CycloneDX v1.4 report.</li></ul>  |
+
+### Outputs
+
+| Output             | Type   | Description                        |
+|--------------------|--------|------------------------------------|
+| `report-file-path` | String | Path to the generated report file. |
+
+## License
+
+This project is released under [MIT License](LICENSE.md).
+
+## Contributions
+
+Contributions are welcome! See [Contributor's Guide](CONTRIBUTING.md).

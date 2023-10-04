@@ -1,21 +1,23 @@
 {
-  "name": "typescript-action",
-  "description": "GitHub Actions TypeScript template",
-  "version": "0.0.0",
-  "author": "",
+  "name": "blackduck-report-action",
+  "description": "GitHub Action to create a Black Duck report",
+  "version": "1.0.0",
+  "author": "tvcsantos",
   "private": true,
-  "homepage": "https://github.com/actions/typescript-action",
+  "homepage": "https://github.com/tvcsantos/blackduck-report-action",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/typescript-action.git"
+    "url": "git+https://github.com/tvcsantos/blackduck-report-action.git"
   },
   "bugs": {
-    "url": "https://github.com/actions/typescript-action/issues"
+    "url": "https://github.com/tvcsantos/blackduck-report-action/issues"
   },
   "keywords": [
     "actions",
     "node",
-    "setup"
+    "setup",
+    "report",
+    "blackduck"
   ],
   "exports": {
     ".": "./dist/index.js"
@@ -25,13 +27,13 @@
   },
   "scripts": {
     "bundle": "npm run format:write && npm run package",
-    "ci-test": "jest",
+    "ci-test": "jest --passWithNoTests",
     "format:write": "prettier --write **/*.ts",
     "format:check": "prettier --check **/*.ts",
     "lint": "npx eslint . -c ./.github/linters/.eslintrc.yml",
     "package": "ncc build src/index.ts --license licenses.txt",
     "package:watch": "npm run package -- --watch",
-    "test": "(jest && make-coverage-badge --output-path ./badges/coverage.svg) || make-coverage-badge --output-path ./badges/coverage.svg",
+    "test": "(jest --passWithNoTests && make-coverage-badge --output-path ./badges/coverage.svg) || make-coverage-badge --output-path ./badges/coverage.svg",
     "all": "npm run format:write && npm run lint && npm run test && npm run package"
   },
   "license": "MIT",
@@ -65,7 +67,9 @@
     ]
   },
   "dependencies": {
-    "@actions/core": "^1.10.1"
+    "@actions/core": "^1.10.1",
+    "@actions/github": "^5.1.1",
+    "axios": "^1.5.1"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",
