@@ -28,10 +28,11 @@ inputs:
   report-format:
     description: |-
       Report format depending on report-type. The following values are supported:
-      - SPDX_22 report: JSON, YAML, RDF or TAG_VALUE.
-      - SPDX_23 report: JSON, YAML, RDF or TAG_VALUE.
+      - SPDX_22 report: JSON, YAML, RDF or TAGVALUE.
+      - SPDX_23 report: JSON, YAML, RDF or TAGVALUE.
       - CYCLONE_DX_13 report: JSON.
       - CYCLONE_DX_14 report: JSON.
+      - LICENSE report: JSON or TEXT.
     default: 'JSON'
     required: false
   report-type:
@@ -41,6 +42,7 @@ inputs:
       - SPDX_23. Generate a SBOM SPDX v2.3 report.
       - CYCLONE_DX_13. Generate a SBOM CycloneDX v1.3 report.
       - CYCLONE_DX_14. Generate a SBOM CycloneDX v1.4 report.
+      - LICENSE. Generate a license report.
     default: 'SPDX_23'
     required: false
 

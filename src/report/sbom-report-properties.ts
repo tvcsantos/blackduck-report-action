@@ -1,11 +1,7 @@
 import { ReportProperties } from './report-properties'
-import {
-  CycloneDXReportFormat,
-  SbomReportType,
-  SPDXReportFormat
-} from '../input/inputs'
+import { SbomReportFormat, SbomReportType } from '../input/inputs'
 
 export interface SbomReportProperties extends ReportProperties {
   readonly type: SbomReportType
-  readonly format: SPDXReportFormat | CycloneDXReportFormat
+  readonly format: SbomReportFormat
 }

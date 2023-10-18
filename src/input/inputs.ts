@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 
-export interface Inputs {
+export type Inputs = {
   blackDuckUrl: string
   blackDuckToken: string
   outputDirectory: string
@@ -30,7 +30,11 @@ export enum SbomReportType {
   CYCLONEDX_14 = 'CYCLONEDX_14'
 }
 
-export type ReportType = SbomReportType
+export enum LicenseReportType {
+  LICENSE = 'LICENSE'
+}
+
+export type ReportType = SbomReportType | LicenseReportType
 
 export enum SPDXReportFormat {
   // noinspection SpellCheckingInspection
@@ -44,12 +48,23 @@ export enum CycloneDXReportFormat {
   JSON = 'JSON'
 }
 
-export type ReportFormat = SPDXReportFormat | CycloneDXReportFormat
+export enum LicenseReportFormat {
+  JSON = 'JSON',
+  TEXT = 'TEXT'
+}
+
+export type SbomReportFormat = SPDXReportFormat | CycloneDXReportFormat
+
+export type ReportFormat = SbomReportFormat | LicenseReportFormat
 
 const REPORT_MATCHING: Map<ReportType, ReportFormat[]> = new Map<
   ReportType,
   ReportFormat[]
 >([
+  [
+    LicenseReportType.LICENSE,
+    [LicenseReportFormat.JSON, LicenseReportFormat.TEXT]
+  ],
   [
     SbomReportType.SPDX_22,
     [

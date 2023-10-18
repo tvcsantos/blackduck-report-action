@@ -13,13 +13,13 @@ export type Report = {
 
 export type Page<T> = { readonly items: T[] } & MetaResource
 
-export interface Meta {
+export type Meta = {
   readonly allow?: string[]
   readonly href: string
   readonly links?: Link[]
 }
 
-export interface Link {
+export type Link = {
   readonly rel?: string
   readonly href?: string
 }
