@@ -7004,7 +7004,7 @@ const SBOM_REPORT_METADATA_PROVIDER = (reportProperties) => {
 exports.SBOM_REPORT_METADATA_PROVIDER = SBOM_REPORT_METADATA_PROVIDER;
 const LICENSE_REPORT_METADATA_PROVIDER = (reportProperties) => {
     return {
-        name: 'license-reports',
+        name: 'licenseReports',
         payload: {
             reportFormat: reportProperties.format,
             categories: [],
