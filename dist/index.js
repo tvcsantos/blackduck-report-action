@@ -6741,6 +6741,7 @@ function getInputReportFormat() {
     const allowedReportFormats = [];
     allowedReportFormats.push(...Object.values(SPDXReportFormat));
     allowedReportFormats.push(...Object.values(CycloneDXReportFormat));
+    allowedReportFormats.push(...Object.values(LicenseReportFormat));
     if (!allowedReportFormats.includes(reportFormat)) {
         throw new Error(`Invalid ${Input.REPORT_FORMAT} option '${reportFormat}'`);
     }
@@ -6750,6 +6751,7 @@ function getInputReportType() {
     const reportType = internalGetInputReportType();
     const allowedReportTypes = [];
     allowedReportTypes.push(...Object.values(SbomReportType));
+    allowedReportTypes.push(...Object.values(LicenseReportType));
     if (!allowedReportTypes.includes(reportType)) {
         throw new Error(`Invalid ${Input.REPORT_TYPE} option '${reportType}'`);
     }

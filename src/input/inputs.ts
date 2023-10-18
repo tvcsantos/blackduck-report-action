@@ -140,6 +140,7 @@ function getInputReportFormat(): ReportFormat {
   const allowedReportFormats = []
   allowedReportFormats.push(...Object.values<string>(SPDXReportFormat))
   allowedReportFormats.push(...Object.values<string>(CycloneDXReportFormat))
+  allowedReportFormats.push(...Object.values<string>(LicenseReportFormat))
   if (!allowedReportFormats.includes(reportFormat)) {
     throw new Error(`Invalid ${Input.REPORT_FORMAT} option '${reportFormat}'`)
   }
@@ -150,6 +151,7 @@ function getInputReportType(): ReportType {
   const reportType = internalGetInputReportType()
   const allowedReportTypes = []
   allowedReportTypes.push(...Object.values<string>(SbomReportType))
+  allowedReportTypes.push(...Object.values<string>(LicenseReportType))
   if (!allowedReportTypes.includes(reportType)) {
     throw new Error(`Invalid ${Input.REPORT_TYPE} option '${reportType}'`)
   }
