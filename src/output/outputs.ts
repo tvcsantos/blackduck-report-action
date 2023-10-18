@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 
-export interface Outputs {
+export type Outputs = {
   reportFilePath: string
 }
 

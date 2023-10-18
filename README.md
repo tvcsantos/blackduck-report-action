@@ -5,12 +5,17 @@
 This action provides support for creating Black Duck reports. Currently, it supports the following types:
 
 - Software Bill of Materials (SBOM)
+- License Reports
 
 Software Bill of Materials (SBOM) reports can be generated in the following formats:
 - SPDX v2.2
 - SPDX v2.3
 - CycloneDX v1.3
 - CycloneDX v1.4
+
+License reports can be generated in the following formats:
+- JSON
+- TEXT
 
 ## Changelog
 

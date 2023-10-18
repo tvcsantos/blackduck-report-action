@@ -5,13 +5,13 @@ import * as core from '@actions/core'
 import { retrySuccessWithExponentialBackoff } from '../utils/utils'
 import { BlackDuckClient } from '../blackduck/black-duck-client'
 import { ReportGenerator } from './report-generator'
-import { SbomReportProperties } from './sbom-report-properties'
 import { ProjectVersion, Report } from '../model/blackduck'
 import { getReportDownloadLink } from './utils'
+import { ReportProperties } from './report-properties'
+import { ReportMetadata } from './report-metadata'
 
-// noinspection SpellCheckingInspection
-export class SbomReportGenerator
-  implements ReportGenerator<SbomReportProperties>
+export class DefaultReportGenerator<T extends ReportProperties>
+  implements ReportGenerator<T>
 {
   // Define constants for retry settings
   private static MAX_RETRIES = 10 // Maximum number of retries
@@ -20,24 +20,27 @@ export class SbomReportGenerator
   private static REPORT_FILE_NAME_PATTERN = /filename="([^"]+)"/
   private static DEFAULT_FILE_NAME = 'downloaded_file.zip'
 
-  constructor(private readonly blackDuckClient: BlackDuckClient) {}
+  constructor(
+    private readonly blackDuckClient: BlackDuckClient,
+    private readonly reportMetadataProvider: (
+      reportProperties: T
+    ) => ReportMetadata<unknown>
+  ) {}
 
   private async createReport(
     version: ProjectVersion,
-    reportProperties: SbomReportProperties
+    reportProperties: T
   ): Promise<string> {
+    const reportMetadata = this.reportMetadataProvider(reportProperties)
     const url = await this.blackDuckClient.getResourceUrlByPath(
-      '/sbom-reports',
+      reportMetadata.path,
       version
     )
 
-    const payload = {
-      reportFormat: reportProperties.format,
-      sbomType: reportProperties.type,
-      includeSubprojects: true
-    }
-
-    const response = await this.blackDuckClient.client.post(url, payload)
+    const response = await this.blackDuckClient.client.post(
+      url,
+      reportMetadata.payload
+    )
 
     const locationHeader = response.headers['location']
 
@@ -57,9 +60,9 @@ export class SbomReportGenerator
   private async getCreatedReportData(locationHeader: string): Promise<Report> {
     const report = await retrySuccessWithExponentialBackoff<Report>(
       async () => this.getReportStatus(locationHeader),
-      SbomReportGenerator.INITIAL_DELAY_MS,
-      SbomReportGenerator.MAX_CUMULATIVE_DELAY_MS,
-      SbomReportGenerator.MAX_RETRIES,
+      DefaultReportGenerator.INITIAL_DELAY_MS,
+      DefaultReportGenerator.MAX_CUMULATIVE_DELAY_MS,
+      DefaultReportGenerator.MAX_RETRIES,
       result => result?.status === 'IN_PROGRESS'
     )
     if (!report || report.status !== 'COMPLETED') {
@@ -73,7 +76,7 @@ export class SbomReportGenerator
 
   async generate(
     version: ProjectVersion,
-    reportProperties: SbomReportProperties
+    reportProperties: T
   ): Promise<string> {
     const locationHeader = await this.createReport(version, reportProperties)
     const report = await this.getCreatedReportData(locationHeader)
@@ -103,14 +106,14 @@ export class SbomReportGenerator
     })
     let savedFileName = fileName
     if (!savedFileName) {
-      savedFileName = SbomReportGenerator.DEFAULT_FILE_NAME
+      savedFileName = DefaultReportGenerator.DEFAULT_FILE_NAME
 
       // Get the content disposition header
       const contentDisposition = response.headers['content-disposition'] || ''
 
       // Extract the filename from the content disposition header
       const matches =
-        SbomReportGenerator.REPORT_FILE_NAME_PATTERN.exec(contentDisposition)
+        DefaultReportGenerator.REPORT_FILE_NAME_PATTERN.exec(contentDisposition)
 
       if (matches && matches.length > 1) {
         // Use the extracted filename if available

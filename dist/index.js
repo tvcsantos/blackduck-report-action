@@ -6626,7 +6626,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.gatherInputs = exports.CycloneDXReportFormat = exports.SPDXReportFormat = exports.SbomReportType = exports.Input = void 0;
+exports.gatherInputs = exports.LicenseReportFormat = exports.CycloneDXReportFormat = exports.SPDXReportFormat = exports.LicenseReportType = exports.SbomReportType = exports.Input = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 var Input;
 (function (Input) {
@@ -6648,6 +6648,10 @@ var SbomReportType;
     SbomReportType["CYCLONEDX_13"] = "CYCLONEDX_13";
     SbomReportType["CYCLONEDX_14"] = "CYCLONEDX_14";
 })(SbomReportType || (exports.SbomReportType = SbomReportType = {}));
+var LicenseReportType;
+(function (LicenseReportType) {
+    LicenseReportType["LICENSE"] = "LICENSE";
+})(LicenseReportType || (exports.LicenseReportType = LicenseReportType = {}));
 var SPDXReportFormat;
 (function (SPDXReportFormat) {
     // noinspection SpellCheckingInspection
@@ -6660,7 +6664,16 @@ var CycloneDXReportFormat;
 (function (CycloneDXReportFormat) {
     CycloneDXReportFormat["JSON"] = "JSON";
 })(CycloneDXReportFormat || (exports.CycloneDXReportFormat = CycloneDXReportFormat = {}));
+var LicenseReportFormat;
+(function (LicenseReportFormat) {
+    LicenseReportFormat["JSON"] = "JSON";
+    LicenseReportFormat["TEXT"] = "TEXT";
+})(LicenseReportFormat || (exports.LicenseReportFormat = LicenseReportFormat = {}));
 const REPORT_MATCHING = new Map([
+    [
+        LicenseReportType.LICENSE,
+        [LicenseReportFormat.JSON, LicenseReportFormat.TEXT]
+    ],
     [
         SbomReportType.SPDX_22,
         [
@@ -6802,34 +6815,7 @@ function setOutput(output, value) {
 
 /***/ }),
 
-/***/ 5591:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ReportGeneratorFactory = void 0;
-const inputs_1 = __nccwpck_require__(8767);
-const sbom_report_generator_1 = __nccwpck_require__(3163);
-class ReportGeneratorFactory {
-    constructor() { }
-    getReportGenerator(blackDuckClient, reportType) {
-        if (reportType in inputs_1.SbomReportType) {
-            return new sbom_report_generator_1.SbomReportGenerator(blackDuckClient);
-        }
-        throw new Error('Invalid report type.');
-    }
-    static instance = new ReportGeneratorFactory();
-    static getInstance() {
-        return ReportGeneratorFactory.instance;
-    }
-}
-exports.ReportGeneratorFactory = ReportGeneratorFactory;
-
-
-/***/ }),
-
-/***/ 3163:
+/***/ 81:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -6861,32 +6847,29 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.SbomReportGenerator = void 0;
+exports.DefaultReportGenerator = void 0;
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 const promises_1 = __importDefault(__nccwpck_require__(3292));
 const core = __importStar(__nccwpck_require__(2186));
 const utils_1 = __nccwpck_require__(239);
 const utils_2 = __nccwpck_require__(7471);
-// noinspection SpellCheckingInspection
-class SbomReportGenerator {
+class DefaultReportGenerator {
     blackDuckClient;
+    reportMetadataProvider;
     // Define constants for retry settings
     static MAX_RETRIES = 10; // Maximum number of retries
     static INITIAL_DELAY_MS = 1000; // Initial delay in milliseconds
     static MAX_CUMULATIVE_DELAY_MS = 300000; // Maximum cumulative delay (5 minutes)
     static REPORT_FILE_NAME_PATTERN = /filename="([^"]+)"/;
     static DEFAULT_FILE_NAME = 'downloaded_file.zip';
-    constructor(blackDuckClient) {
+    constructor(blackDuckClient, reportMetadataProvider) {
         this.blackDuckClient = blackDuckClient;
+        this.reportMetadataProvider = reportMetadataProvider;
     }
     async createReport(version, reportProperties) {
-        const url = await this.blackDuckClient.getResourceUrlByPath('/sbom-reports', version);
-        const payload = {
-            reportFormat: reportProperties.format,
-            sbomType: reportProperties.type,
-            includeSubprojects: true
-        };
-        const response = await this.blackDuckClient.client.post(url, payload);
+        const reportMetadata = this.reportMetadataProvider(reportProperties);
+        const url = await this.blackDuckClient.getResourceUrlByPath(reportMetadata.path, version);
+        const response = await this.blackDuckClient.client.post(url, reportMetadata.payload);
         const locationHeader = response.headers['location'];
         if (!locationHeader) {
             throw Error('Request to create report failed. Location header is missing.');
@@ -6895,7 +6878,7 @@ class SbomReportGenerator {
         return locationHeader;
     }
     async getCreatedReportData(locationHeader) {
-        const report = await (0, utils_1.retrySuccessWithExponentialBackoff)(async () => this.getReportStatus(locationHeader), SbomReportGenerator.INITIAL_DELAY_MS, SbomReportGenerator.MAX_CUMULATIVE_DELAY_MS, SbomReportGenerator.MAX_RETRIES, result => result?.status === 'IN_PROGRESS');
+        const report = await (0, utils_1.retrySuccessWithExponentialBackoff)(async () => this.getReportStatus(locationHeader), DefaultReportGenerator.INITIAL_DELAY_MS, DefaultReportGenerator.MAX_CUMULATIVE_DELAY_MS, DefaultReportGenerator.MAX_RETRIES, result => result?.status === 'IN_PROGRESS');
         if (!report || report.status !== 'COMPLETED') {
             throw Error('Unable to get a COMPLETED report.');
         }
@@ -6919,11 +6902,11 @@ class SbomReportGenerator {
         });
         let savedFileName = fileName;
         if (!savedFileName) {
-            savedFileName = SbomReportGenerator.DEFAULT_FILE_NAME;
+            savedFileName = DefaultReportGenerator.DEFAULT_FILE_NAME;
             // Get the content disposition header
             const contentDisposition = response.headers['content-disposition'] || '';
             // Extract the filename from the content disposition header
-            const matches = SbomReportGenerator.REPORT_FILE_NAME_PATTERN.exec(contentDisposition);
+            const matches = DefaultReportGenerator.REPORT_FILE_NAME_PATTERN.exec(contentDisposition);
             if (matches && matches.length > 1) {
                 // Use the extracted filename if available
                 savedFileName = matches[1];
@@ -6946,7 +6929,75 @@ class SbomReportGenerator {
         return `${outputDirectory}/${savedFileName}`;
     }
 }
-exports.SbomReportGenerator = SbomReportGenerator;
+exports.DefaultReportGenerator = DefaultReportGenerator;
+
+
+/***/ }),
+
+/***/ 5591:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ReportGeneratorFactory = void 0;
+const inputs_1 = __nccwpck_require__(8767);
+const default_report_generator_1 = __nccwpck_require__(81);
+const report_meatada_provider_1 = __nccwpck_require__(3951);
+class ReportGeneratorFactory {
+    constructor() { }
+    getReportGenerator(blackDuckClient, reportType) {
+        let reportMetadataProvider;
+        if (reportType in inputs_1.SbomReportType) {
+            reportMetadataProvider = report_meatada_provider_1.SBOM_REPORT_METADATA_PROVIDER;
+        }
+        else if (reportType in inputs_1.LicenseReportType) {
+            reportMetadataProvider = report_meatada_provider_1.LICENSE_REPORT_METADATA_PROVIDER;
+        }
+        else {
+            throw new Error('Invalid report type.');
+        }
+        return new default_report_generator_1.DefaultReportGenerator(blackDuckClient, reportMetadataProvider);
+    }
+    static instance = new ReportGeneratorFactory();
+    static getInstance() {
+        return ReportGeneratorFactory.instance;
+    }
+}
+exports.ReportGeneratorFactory = ReportGeneratorFactory;
+
+
+/***/ }),
+
+/***/ 3951:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.LICENSE_REPORT_METADATA_PROVIDER = exports.SBOM_REPORT_METADATA_PROVIDER = void 0;
+const SBOM_REPORT_METADATA_PROVIDER = (reportProperties) => {
+    return {
+        path: '/sbom-reports',
+        payload: {
+            reportFormat: reportProperties.format,
+            sbomType: reportProperties.type,
+            includeSubprojects: false
+        }
+    };
+};
+exports.SBOM_REPORT_METADATA_PROVIDER = SBOM_REPORT_METADATA_PROVIDER;
+const LICENSE_REPORT_METADATA_PROVIDER = (reportProperties) => {
+    return {
+        path: '/license-reports',
+        payload: {
+            reportFormat: reportProperties.format,
+            categories: [],
+            includeSubprojects: false
+        }
+    };
+};
+exports.LICENSE_REPORT_METADATA_PROVIDER = LICENSE_REPORT_METADATA_PROVIDER;
 
 
 /***/ }),
