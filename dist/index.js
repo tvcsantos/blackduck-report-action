@@ -6868,9 +6868,22 @@ class DefaultReportGenerator {
         this.blackDuckClient = blackDuckClient;
         this.reportMetadataProvider = reportMetadataProvider;
     }
+    async getResourceUrl(version, reportMetadata) {
+        let url;
+        if (reportMetadata.path) {
+            url = await this.blackDuckClient.getResourceUrlByPath(reportMetadata.path, version);
+        }
+        else if (reportMetadata.name) {
+            url = await this.blackDuckClient.getResourceUrlByName(reportMetadata.name, version);
+        }
+        else {
+            throw Error('Request to create report failed. Resource name and path are missing. At least one of them must be provided.');
+        }
+        return url;
+    }
     async createReport(version, reportProperties) {
         const reportMetadata = this.reportMetadataProvider(reportProperties);
-        const url = await this.blackDuckClient.getResourceUrlByPath(reportMetadata.path, version);
+        const url = await this.getResourceUrl(version, reportMetadata);
         const response = await this.blackDuckClient.client.post(url, reportMetadata.payload);
         const locationHeader = response.headers['location'];
         if (!locationHeader) {
@@ -6991,7 +7004,7 @@ const SBOM_REPORT_METADATA_PROVIDER = (reportProperties) => {
 exports.SBOM_REPORT_METADATA_PROVIDER = SBOM_REPORT_METADATA_PROVIDER;
 const LICENSE_REPORT_METADATA_PROVIDER = (reportProperties) => {
     return {
-        path: '/license-reports',
+        name: 'license-reports',
         payload: {
             reportFormat: reportProperties.format,
             categories: [],
