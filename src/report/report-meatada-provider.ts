@@ -21,7 +21,7 @@ export const LICENSE_REPORT_METADATA_PROVIDER = (
   reportProperties: LicenseReportProperties
 ): ReportMetadata<LicenseReportPayload> => {
   return {
-    path: '/license-reports',
+    name: 'license-reports',
     payload: {
       reportFormat: reportProperties.format,
       categories: [],

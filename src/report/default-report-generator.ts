@@ -27,15 +27,37 @@ export class DefaultReportGenerator<T extends ReportProperties>
     ) => ReportMetadata<unknown>
   ) {}
 
+  private async getResourceUrl(
+    version: ProjectVersion,
+    reportMetadata: ReportMetadata<unknown>
+  ): Promise<string> {
+    let url: string
+    if (reportMetadata.path) {
+      url = await this.blackDuckClient.getResourceUrlByPath(
+        reportMetadata.path,
+        version
+      )
+    } else if (reportMetadata.name) {
+      url = await this.blackDuckClient.getResourceUrlByName(
+        reportMetadata.name,
+        version
+      )
+    } else {
+      throw Error(
+        'Request to create report failed. Resource name and path are missing. At least one of them must be provided.'
+      )
+    }
+
+    return url
+  }
+
   private async createReport(
     version: ProjectVersion,
     reportProperties: T
   ): Promise<string> {
     const reportMetadata = this.reportMetadataProvider(reportProperties)
-    const url = await this.blackDuckClient.getResourceUrlByPath(
-      reportMetadata.path,
-      version
-    )
+
+    const url = await this.getResourceUrl(version, reportMetadata)
 
     const response = await this.blackDuckClient.client.post(
       url,

@@ -1,4 +1,5 @@
 export type ReportMetadata<T> = {
-  path: string
+  path?: string
+  name?: string
   payload: T
 }
