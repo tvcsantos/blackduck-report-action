@@ -8,12 +8,14 @@ This action provides support for creating Black Duck reports. Currently, it supp
 - License Reports
 
 Software Bill of Materials (SBOM) reports can be generated in the following formats:
+
 - SPDX v2.2
 - SPDX v2.3
 - CycloneDX v1.3
 - CycloneDX v1.4
 
 License reports can be generated in the following formats:
+
 - JSON
 - TEXT
 
@@ -37,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Create Black Duck report
-        uses: tvcsantos/blackduck-report-action@v1
+        uses: tvcsantos/blackduck-report-action@v2
         with:
           blackduck-url: ${{ vars.BLACKDUCK_URL }}
           blackduck-token: ${{ secrets.BLACKDUCK_API_TOKEN }}
@@ -63,6 +65,8 @@ For more details on the values for these secrets and variables please check [Inp
 
 ### Inputs
 
+<!-- markdownlint-disable MD033 -->
+
 | Input              | Type   | Required | Default Value              | Description                                                                                                                                                                                                                                                                                          |
 |--------------------|--------|----------|----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `blackduck-url`    | String | Yes      | -                          | Black Duck instance URL.                                                                                                                                                                                                                                                                             |
@@ -73,11 +77,17 @@ For more details on the values for these secrets and variables please check [Inp
 | `report-format`    | String | No       | `JSON`                     | Report format depending on report-type. The following values are supported:<ul><li>`SPDX_22` report: `JSON`, `YAML`, `RDF` or `TAG_VALUE`.</li><li>`SPDX_23` report: `JSON`, `YAML`, `RDF` or `TAG_VALUE`.</li><li>`CYCLONE_DX_13` report: `JSON`.</li><li>`CYCLONE_DX_14` report: `JSON`.</li></ul> |
 | `report-type`      | String | No       | `SPDX_23`                  | Report type. The following values are supported:<ul><li>`SPDX_22`. Generate a SBOM SPDX v2.2 report.</li><li>`SPDX_23`. Generate a SBOM SPDX v2.3 report.</li><li>`CYCLONE_DX_13`. Generate a SBOM CycloneDX v1.3 report.</li><li>`CYCLONE_DX_14`. Generate a SBOM CycloneDX v1.4 report.</li></ul>  |
 
+<!-- markdownlint-enable MD033 -->
+
 ### Outputs
+
+<!-- markdownlint-disable MD033 -->
 
 | Output             | Type   | Description                        |
 |--------------------|--------|------------------------------------|
 | `report-file-path` | String | Path to the generated report file. |
+
+<!-- markdownlint-enable MD033 -->
 
 ## License
 
