@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2024-03-02
+
+### Changed
+
+- Update to latest `actions/typescript-action`
+
 ## [1.1.3] - 2023-10-18
 
 ### Fixed
@@ -15,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix wrong resource url for license report
+- Fix wrong resource URL for license report
 
 ## [1.1.1] - 2023-10-18
 
@@ -33,9 +39,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Implement `blackduck-report-action` github action
+- Implement `blackduck-report-action` GitHub action
 
-[Unreleased]: https://github.com/tvcsantos/blackduck-report-action/compare/v1.1.3...main
+[2.0.0]: https://github.com/tvcsantos/blackduck-report-action/compare/v1.1.3...v2.0.0
 [1.1.3]: https://github.com/tvcsantos/blackduck-report-action/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/tvcsantos/blackduck-report-action/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/tvcsantos/blackduck-report-action/compare/v1.1.0...v1.1.1
