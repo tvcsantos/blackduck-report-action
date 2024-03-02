@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix wrong resource url for license report
+- Fix wrong resource URL for license report
 
 ## [1.1.1] - 2023-10-18
 
