@@ -3,8 +3,8 @@ description: 'Create Black Duck report'
 author: 'Tiago Santos'
 
 branding:
-  icon: settings
-  color: blue
+  icon: 'settings'
+  color: 'blue'
 
 inputs:
   blackduck-url:
