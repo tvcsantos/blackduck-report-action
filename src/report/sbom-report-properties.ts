@@ -4,4 +4,5 @@ import { SbomReportFormat, SbomReportType } from '../input/inputs'
 export interface SbomReportProperties extends ReportProperties {
   readonly type: SbomReportType
   readonly format: SbomReportFormat
+  readonly template?: string
 }

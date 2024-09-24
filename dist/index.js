@@ -28211,6 +28211,7 @@ exports["default"] = _default;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ActionOrchestrator = void 0;
+const inputs_1 = __nccwpck_require__(8767);
 const report_generator_factory_1 = __nccwpck_require__(5591);
 const black_duck_client_1 = __nccwpck_require__(7905);
 const black_duck_enhanced_client_1 = __nccwpck_require__(3704);
@@ -28232,6 +28233,14 @@ class ActionOrchestrator {
         };
     }
     getReportProperties() {
+        if (this.inputs.reportType in inputs_1.SbomReportType) {
+            return {
+                type: this.inputs.reportType,
+                format: this.inputs.reportFormat,
+                outputDirectory: this.inputs.outputDirectory,
+                template: this.inputs.sbomReportTemplate
+            };
+        }
         return {
             type: this.inputs.reportType,
             format: this.inputs.reportFormat,
@@ -28660,6 +28669,7 @@ var Input;
     Input["REPORT_FORMAT"] = "report-format";
     Input["REPORT_TYPE"] = "report-type";
     Input["OUTPUT_DIRECTORY"] = "output-directory";
+    Input["SBOM_REPORT_TEMPLATE"] = "sbom-report-template";
 })(Input || (exports.Input = Input = {}));
 // noinspection SpellCheckingInspection
 var SbomReportType;
@@ -28725,6 +28735,7 @@ function gatherInputs() {
     const reportFormat = getInputReportFormat();
     const reportType = getInputReportType();
     const outputDirectory = getInputOutputDirectory();
+    const sbomReportTemplate = getInputSbomReportTemplate();
     verifyMatchingReportTypeAndFormat(reportType, reportFormat);
     return {
         blackDuckUrl,
@@ -28733,7 +28744,8 @@ function gatherInputs() {
         projectVersion,
         reportFormat,
         reportType,
-        outputDirectory
+        outputDirectory,
+        sbomReportTemplate
     };
 }
 exports.gatherInputs = gatherInputs;
@@ -28787,6 +28799,9 @@ function verifyMatchingReportTypeAndFormat(reportType, reportFormat) {
     if (!allowedReportFormats.includes(reportFormat)) {
         throw new Error(`Report type '${reportType}' does not support report format '${reportFormat}'`);
     }
+}
+function getInputSbomReportTemplate() {
+    return core.getInput(Input.SBOM_REPORT_TEMPLATE) || undefined;
 }
 // Pattern: function getInput<input-name>(): <type>
 
@@ -28904,7 +28919,7 @@ class DefaultReportGenerator {
         return url;
     }
     async createReport(version, reportProperties) {
-        const reportMetadata = this.reportMetadataProvider(reportProperties);
+        const reportMetadata = await this.reportMetadataProvider(this.blackDuckClient, reportProperties);
         const url = await this.getResourceUrl(version, reportMetadata);
         const response = await this.blackDuckClient.client.post(url, reportMetadata.payload);
         const locationHeader = response.headers['location'];
@@ -29007,24 +29022,36 @@ exports.ReportGeneratorFactory = ReportGeneratorFactory;
 /***/ }),
 
 /***/ 3951:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LICENSE_REPORT_METADATA_PROVIDER = exports.SBOM_REPORT_METADATA_PROVIDER = void 0;
-const SBOM_REPORT_METADATA_PROVIDER = (reportProperties) => {
+const utils_1 = __nccwpck_require__(239);
+const TEMPLATES_URL = '/sbom-templates';
+const SBOM_REPORT_METADATA_PROVIDER = async (blackDuckClient, reportProperties) => {
+    let templateUrl = undefined;
+    if (reportProperties.template) {
+        const templates = blackDuckClient.getItemsByUrl(TEMPLATES_URL);
+        const template = await (0, utils_1.asyncIteratorFirstOrUndefined)(templates, x => x.name === reportProperties.template);
+        if (!template) {
+            throw new Error(`Template ${reportProperties.template} not found.`);
+        }
+        templateUrl = template._meta.href;
+    }
     return {
         path: '/sbom-reports',
         payload: {
             reportFormat: reportProperties.format,
             sbomType: reportProperties.type,
-            includeSubprojects: false
+            includeSubprojects: false,
+            template: templateUrl
         }
     };
 };
 exports.SBOM_REPORT_METADATA_PROVIDER = SBOM_REPORT_METADATA_PROVIDER;
-const LICENSE_REPORT_METADATA_PROVIDER = (reportProperties) => {
+const LICENSE_REPORT_METADATA_PROVIDER = async (_, reportProperties) => {
     return {
         name: 'licenseReports',
         payload: {

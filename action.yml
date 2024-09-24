@@ -45,6 +45,12 @@ inputs:
       - LICENSE. Generate a license report.
     default: 'SPDX_23'
     required: false
+  sbom-report-template:
+    description: |-
+      Template name to be used for the SBOM report. This needs to match the name
+      of the template in Black Duck. If not provided, the default template will
+      be used.
+    required: false
 
 outputs:
   report-file-path:

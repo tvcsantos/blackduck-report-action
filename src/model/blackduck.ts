@@ -23,3 +23,10 @@ export type Link = {
   readonly rel?: string
   readonly href?: string
 }
+
+export type SbomTemplate = {
+  active: boolean
+  default: boolean
+  id: string
+  name: string
+} & MetaResource

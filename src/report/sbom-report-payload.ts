@@ -4,4 +4,5 @@ export type SbomReportPayload = {
   reportFormat: SbomReportFormat
   sbomType: SbomReportType
   includeSubprojects: boolean
+  template?: string
 }

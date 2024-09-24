@@ -1,7 +1,7 @@
 {
   "name": "blackduck-report-action",
   "description": "GitHub Action to create a Black Duck report",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "author": "tvcsantos",
   "private": true,
   "homepage": "https://github.com/tvcsantos/blackduck-report-action",

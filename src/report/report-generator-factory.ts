@@ -17,8 +17,9 @@ export class ReportGeneratorFactory {
     reportType: ReportType
   ): ReportGenerator<ReportProperties> {
     let reportMetadataProvider: (
+      blackDuckClient: BlackDuckClient,
       reportProperties: never
-    ) => ReportMetadata<unknown>
+    ) => Promise<ReportMetadata<unknown>>
     if (reportType in SbomReportType) {
       reportMetadataProvider = SBOM_REPORT_METADATA_PROVIDER
     } else if (reportType in LicenseReportType) {

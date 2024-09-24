@@ -23,8 +23,9 @@ export class DefaultReportGenerator<T extends ReportProperties>
   constructor(
     private readonly blackDuckClient: BlackDuckClient,
     private readonly reportMetadataProvider: (
+      blackDuckClient: BlackDuckClient,
       reportProperties: T
-    ) => ReportMetadata<unknown>
+    ) => Promise<ReportMetadata<unknown>>
   ) {}
 
   private async getResourceUrl(
@@ -55,7 +56,10 @@ export class DefaultReportGenerator<T extends ReportProperties>
     version: ProjectVersion,
     reportProperties: T
   ): Promise<string> {
-    const reportMetadata = this.reportMetadataProvider(reportProperties)
+    const reportMetadata = await this.reportMetadataProvider(
+      this.blackDuckClient,
+      reportProperties
+    )
 
     const url = await this.getResourceUrl(version, reportMetadata)
 
