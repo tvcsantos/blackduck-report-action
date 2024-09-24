@@ -133,7 +133,7 @@ To contribute documentation:
 - Edit or add any relevant documentation following the development guidelines.
 - Make sure your changes are formatted correctly and consistently with the rest
   of the documentation.
-- Re-read what you wrote, and run a spellchecker on it to make sure you didn't
+- Re-read what you wrote, and run a spell checker on it to make sure you didn't
   miss anything.
 - Update the [Changelog](CHANGELOG.md) with the required changes.
 - Write clear, concise commit message(s) using [conventional commits format][conventional-commits].
@@ -149,7 +149,7 @@ Once you've filed the PR:
 - If the maintainer asks for any changes, edit your changes, push, and ask for
   another review.
 - If the maintainer decides to pass on your PR, they will thank you for the
-  contribution and explain why they won't be accepting the changes. That's ok!
+  contribution and explain why they won't be accepting the changes. That's OK!
   We still really appreciate you taking the time to do it, and we don't take
   that lightly. 💚
 - If your PR gets accepted, it will be marked as such, and merged into the
@@ -193,7 +193,7 @@ Once you've filed the PR:
   another review. Additional tags (such as `needs-tests`) will be added
   depending on the review.
 - If the maintainer decides to pass on your PR, they will thank you for the
-  contribution and explain why they won't be accepting the changes. That's ok!
+  contribution and explain why they won't be accepting the changes. That's OK!
   We still really appreciate you taking the time to do it, and we don't take
   that lightly. 💚
 - If your PR gets accepted, it will be marked as such, and merged into the
@@ -311,7 +311,7 @@ Some notes:
   coverage should not drop, unless the specific case is considered reasonable
   by maintainers.
 - Please make sure you're familiar with the code or documentation being
-  updated, unless it's a minor change (spellchecking, minor formatting, etc).
+  updated, unless it's a minor change (spell checking, minor formatting, etc).
   You may @mention another project member who you think is better suited for
   the review, but still provide a non-approving review of your own.
 - Be extra kind: people who submit code/doc contributions are putting

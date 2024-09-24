@@ -45,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Implement `blackduck-report-action` GitHub action
+- Implement `blackduck-report-action` GitHub Action
 
 [2.1.0]: https://github.com/tvcsantos/blackduck-report-action/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/tvcsantos/blackduck-report-action/compare/v1.1.3...v2.0.0
