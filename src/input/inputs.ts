@@ -8,6 +8,7 @@ export type Inputs = {
   projectVersion: string
   reportFormat: ReportFormat
   reportType: ReportType
+  sbomReportTemplate?: string
 }
 
 export enum Input {
@@ -18,7 +19,8 @@ export enum Input {
   PROJECT_VERSION = 'project-version',
   REPORT_FORMAT = 'report-format',
   REPORT_TYPE = 'report-type',
-  OUTPUT_DIRECTORY = 'output-directory'
+  OUTPUT_DIRECTORY = 'output-directory',
+  SBOM_REPORT_TEMPLATE = 'sbom-report-template'
 }
 
 // noinspection SpellCheckingInspection
@@ -95,6 +97,7 @@ export function gatherInputs(): Inputs {
   const reportFormat = getInputReportFormat()
   const reportType = getInputReportType()
   const outputDirectory = getInputOutputDirectory()
+  const sbomReportTemplate = getInputSbomReportTemplate()
   verifyMatchingReportTypeAndFormat(reportType, reportFormat)
   return {
     blackDuckUrl,
@@ -103,7 +106,8 @@ export function gatherInputs(): Inputs {
     projectVersion,
     reportFormat,
     reportType,
-    outputDirectory
+    outputDirectory,
+    sbomReportTemplate
   }
 }
 
@@ -171,6 +175,10 @@ function verifyMatchingReportTypeAndFormat(
       `Report type '${reportType}' does not support report format '${reportFormat}'`
     )
   }
+}
+
+function getInputSbomReportTemplate(): string | undefined {
+  return core.getInput(Input.SBOM_REPORT_TEMPLATE) || undefined
 }
 
 // Pattern: function getInput<input-name>(): <type>
