@@ -7,7 +7,7 @@ import { BlackDuckClient } from '../blackduck/black-duck-client'
 import { SbomTemplate } from '../model/blackduck'
 import { asyncIteratorFirstOrUndefined } from '../utils/utils'
 
-const TEMPLATES_URL = '/sbom-templates'
+const TEMPLATES_URL = 'sbom-templates'
 
 export const SBOM_REPORT_METADATA_PROVIDER = async (
   blackDuckClient: BlackDuckClient,
@@ -15,7 +15,9 @@ export const SBOM_REPORT_METADATA_PROVIDER = async (
 ): Promise<ReportMetadata<SbomReportPayload>> => {
   let templateUrl: string | undefined = undefined
   if (reportProperties.template) {
-    const templates = blackDuckClient.getItemsByUrl<SbomTemplate>(TEMPLATES_URL)
+    const templatesUrl =
+      await blackDuckClient.getResourceUrlByPath(TEMPLATES_URL)
+    const templates = blackDuckClient.getItemsByUrl<SbomTemplate>(templatesUrl)
     const template = await asyncIteratorFirstOrUndefined(
       templates,
       x => x.name === reportProperties.template

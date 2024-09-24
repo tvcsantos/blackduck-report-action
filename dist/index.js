@@ -29029,11 +29029,12 @@ exports.ReportGeneratorFactory = ReportGeneratorFactory;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LICENSE_REPORT_METADATA_PROVIDER = exports.SBOM_REPORT_METADATA_PROVIDER = void 0;
 const utils_1 = __nccwpck_require__(239);
-const TEMPLATES_URL = '/sbom-templates';
+const TEMPLATES_URL = 'sbom-templates';
 const SBOM_REPORT_METADATA_PROVIDER = async (blackDuckClient, reportProperties) => {
     let templateUrl = undefined;
     if (reportProperties.template) {
-        const templates = blackDuckClient.getItemsByUrl(TEMPLATES_URL);
+        const templatesUrl = await blackDuckClient.getResourceUrlByPath(TEMPLATES_URL);
+        const templates = blackDuckClient.getItemsByUrl(templatesUrl);
         const template = await (0, utils_1.asyncIteratorFirstOrUndefined)(templates, x => x.name === reportProperties.template);
         if (!template) {
             throw new Error(`Template ${reportProperties.template} not found.`);
