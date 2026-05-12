@@ -31,7 +31,7 @@ export const SBOM_REPORT_METADATA_PROVIDER = async (
     path: '/sbom-reports',
     payload: {
       reportFormat: reportProperties.format,
-      sbomType: reportProperties.type,
+      specification: reportProperties.type,
       includeSubprojects: false,
       template: templateUrl
     }

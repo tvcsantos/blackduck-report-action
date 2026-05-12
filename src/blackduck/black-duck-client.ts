@@ -31,6 +31,7 @@ export class BlackDuckClient {
     private readonly token: string
   ) {
     // Create an Axios instance with a request interceptor
+    // eslint-disable-next-line import/no-named-as-default-member
     this.clientInstance = axios.create({
       baseURL: basePath
     })
@@ -222,7 +223,7 @@ export class BlackDuckClient {
     properties.headers = headers
     const response = await this.clientInstance.get<T>(url, properties)
     if ('content-type' in response.headers) {
-      const contentType = response.headers['content-type'] ?? ''
+      const contentType = String(response.headers['content-type'] ?? '')
       const values = contentType.split(',').map((x: string) => x.trim())
       if (values.some((x: string) => x === 'internal')) {
         core.warning(
