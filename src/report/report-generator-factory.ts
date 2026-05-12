@@ -6,7 +6,7 @@ import { DefaultReportGenerator } from './default-report-generator'
 import {
   LICENSE_REPORT_METADATA_PROVIDER,
   SBOM_REPORT_METADATA_PROVIDER
-} from './report-meatada-provider'
+} from './report-metadata-provider'
 import { ReportMetadata } from './report-metadata'
 
 export class ReportGeneratorFactory {

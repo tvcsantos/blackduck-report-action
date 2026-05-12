@@ -2,7 +2,7 @@ import { SbomReportFormat, SbomReportType } from '../input/inputs'
 
 export type SbomReportPayload = {
   reportFormat: SbomReportFormat
-  sbomType: SbomReportType
+  specification: SbomReportType
   includeSubprojects: boolean
   template?: string
 }
